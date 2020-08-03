@@ -1,0 +1,47 @@
+@import "../../assets/_mixins";
+
+.ImageViewer {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  height: calc(100vh - 14rem);
+  position: relative;
+
+  img {
+    height: inherit;
+  }
+}
+
+%imageviewer__arrow {
+  align-items: center;
+  display: flex;
+  background-color: #000;
+  height: 100%;
+  justify-content: center;
+  position: absolute;
+  width: 3rem;
+
+  &:hover {
+    background-color: $kespry-blue;
+    cursor: pointer;
+  }
+}
+
+.ImageViewer__arrow--left {
+  @extend %imageviewer__arrow;
+  left: 0;
+}
+
+.ImageViewer__arrow--right {
+  @extend %imageviewer__arrow;
+  right: 0;
+}
+
+.ImageViewer__image {
+  padding: 1rem;
+  height: inherit;
+
+  img {
+    height: 100%;
+  }
+}

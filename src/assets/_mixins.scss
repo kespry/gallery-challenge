@@ -1,0 +1,28 @@
+/*
+ * Colors
+ */
+
+$kespry-blue: #3721f8;
+$kespry-gray: #f5f8f8;
+
+/*
+ * Scrollbar
+ */
+
+%scrollbar {
+  &::-webkit-scrollbar {
+    background-color: transparent;
+    width: 0.5rem;
+  }
+
+  &::-webkit-scrollbar-track-piece {
+    background-color: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: $kespry-blue;
+    border-radius: 0;
+    height: 0.5rem;
+    width: 0.5rem;
+  }
+}

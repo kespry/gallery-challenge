@@ -4,6 +4,8 @@ A template built with create-react-app has been provided to you. You can find in
 
 This challenge is intended to take two hours. Focus on writing clean, readable, extensible code.
 
+![kespry_gallery](kespry_gallery.gif)
+
 ### Specifications
 
 Build an image gallery.
