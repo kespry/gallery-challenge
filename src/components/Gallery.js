@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import { v4 as uuidv4 } from 'uuid';
-import styled, { css } from 'styled-components'
+import styled, { css, keyframes } from 'styled-components'
 import urlRegex from 'url-regex'
 import { atom, atomFamily, useRecoilCallback, useRecoilValue } from "recoil";
 import { useRecoilState } from "recoil/dist";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowLeft, faArrowRight } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faArrowRight, faSpinner } from '@fortawesome/free-solid-svg-icons';
 
 styled.div = styled.div || {};
 
@@ -84,6 +84,8 @@ const ImageRoot = styled.img`
     `}
 `
 export const Image = ({ id }) => {
+  const [loading, setLoading] = useState(true)
+
   const image = useRecoilValue(atoms.imageFamily(id));
   const [activeImageId, setActiveImageId] = useRecoilState(atoms.activeImageId);
 
@@ -93,12 +95,20 @@ export const Image = ({ id }) => {
     }
   }
 
+  const onImageLoaded = () => {
+    setLoading(false);
+  }
+
   return (
-    <ImageRoot
-      src={image.url}
-      active={image.id === activeImageId}
-      alt={JSON.stringify(image)}
-      onClick={onImageClick} />
+    <div>
+      {loading && <div style={{width: '100%', height: '100%'}}><FontAwesomeIcon spin={true} icon={faSpinner} /></div>}
+      <ImageRoot
+        src={image.url}
+        active={image.id === activeImageId}
+        alt={JSON.stringify(image)}
+        onLoad={onImageLoaded}
+        onClick={onImageClick} />
+    </div>
   )
 }
 
@@ -211,6 +221,17 @@ export const Gallery = () => {
   const addImage = useAddImageCallback();
   useEffect(() => {
     addImage(emptyImage);
+  }, [addImage]);
+
+  useEffect(() => {
+    for (let i = 0; i < 10; i++) {
+      setTimeout(() => {
+        addImage({
+          id: uuidv4(),
+          url: `https://picsum.photos/seed/${uuidv4()}/200/300`
+        });
+      }, 0);
+    }
   }, [addImage]);
 
   return (
