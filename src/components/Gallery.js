@@ -1,44 +1,63 @@
 import React, { useEffect, useState } from 'react'
 import { v4 as uuidv4 } from 'uuid';
-import styled, { css, keyframes } from 'styled-components'
+import styled, { css } from 'styled-components'
 import urlRegex from 'url-regex'
-import { atom, atomFamily, useRecoilCallback, useRecoilValue } from "recoil";
+import { atom, atomFamily, selector, useRecoilCallback, useRecoilValue } from "recoil";
 import { useRecoilState } from "recoil/dist";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft, faArrowRight, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import useDimensions from "react-use-dimensions";
 
 styled.div = styled.div || {};
 
-const emptyImage = {
+export const emptyImage = {
   id: uuidv4(),
   url: 'https://i.imgur.com/hUkwowL.png'
 }
-const atoms = {
+export const atoms = {
   imageIds: atom({
     key: 'atom/imageIds',
-    default: []
+    default: [emptyImage.id]
   }),
   activeImageId: atom({
     key: 'atom/activeImageId',
-    default: null
+    default: emptyImage.id
   }),
   imageFamily: atomFamily({
     key: 'atomFamily/image',
-    default: _id => null
+    default: id => ({
+      id,
+      url: emptyImage.url
+    })
+  })
+}
+const selectors = {
+  activeImageIndex: selector({
+    key: 'selector/activeImageIndex',
+    get: ({ get }) => {
+      const imageIds = get(atoms.imageIds);
+      const activeImageId = get(atoms.activeImageId);
+      return Math.max(0, imageIds.indexOf(activeImageId));
+    }
   })
 }
 
-const useAddImageCallback = () => useRecoilCallback(({ snapshot, set }) => async image => {
-  set(atoms.imageFamily(image.id), image);
-
+const useAddImagesCallback = () => useRecoilCallback(({ snapshot, set }) => async images => {
   const imageIds = await snapshot.getPromise(atoms.imageIds);
-  if (imageIds.length === 0 || imageIds.find(id => id === emptyImage.id)) {
-    set(atoms.imageIds, [image.id]);
-    set(atoms.activeImageId, image.id);
-  } else {
-    set(atoms.imageIds, [...imageIds, image.id]);
+
+  for (const image of images) {
+    set(atoms.imageFamily(image.id), image);
   }
-});
+
+  const newIds = images.map(x => x.id);
+  if (imageIds.length === 1 && imageIds[0] === emptyImage.id) {
+    set(atoms.imageIds, newIds);
+    set(atoms.activeImageId, newIds[0]);
+  } else {
+    set(atoms.imageIds, [...imageIds, ...newIds]);
+  }
+
+}, []);
 
 const InputRoot = styled.input`
   display: inherit;
@@ -46,13 +65,14 @@ const InputRoot = styled.input`
 export const Input = () => {
   const [url, setUrl] = useState('')
 
-  const addImage = useAddImageCallback();
+  const addImages = useAddImagesCallback();
 
   return (
     <InputRoot
       placeholder="Insert a new image entering the URL..."
       type="search"
       autoComplete="off"
+      data-testid="input"
       value={url}
       onChange={({ currentTarget }) => {
         setUrl(currentTarget.value)
@@ -60,10 +80,10 @@ export const Input = () => {
       onKeyUp={({ key }) => {
         if (key === 'Enter') {
           if (urlRegex().test(url)) {
-            addImage({
+            addImages([{
               id: uuidv4(),
               url
-            });
+            }]);
             setUrl('');
           }
         }
@@ -73,7 +93,7 @@ export const Input = () => {
 }
 
 const ImageRoot = styled.img`
-  width: 100px;
+  width: ${props => props.width}px;
 
     ${props => props.active
   ? css`
@@ -83,7 +103,7 @@ const ImageRoot = styled.img`
       cursor: pointer;
     `}
 `
-export const Image = ({ id }) => {
+export const Image = ({ id, width }) => {
   const [loading, setLoading] = useState(true)
 
   const image = useRecoilValue(atoms.imageFamily(id));
@@ -101,9 +121,11 @@ export const Image = ({ id }) => {
 
   return (
     <div>
-      {loading && <div style={{width: '100%', height: '100%'}}><FontAwesomeIcon spin={true} icon={faSpinner} /></div>}
+      {loading && <div style={{ width: '100%', height: '100%' }}><FontAwesomeIcon spin={true} icon={faSpinner} /></div>}
       <ImageRoot
         src={image.url}
+        data-testid="img"
+        width={width}
         active={image.id === activeImageId}
         alt={JSON.stringify(image)}
         onLoad={onImageLoaded}
@@ -128,9 +150,7 @@ export const NavigationButton = ({ direction }) => {
   const imageIds = useRecoilValue(atoms.imageIds);
 
   const onClick = useRecoilCallback(({ snapshot, set }) => async () => {
-    const activeImageId = await snapshot.getPromise(atoms.activeImageId);
-
-    const activeImageIndex = imageIds.indexOf(activeImageId);
+    const activeImageIndex = await snapshot.getPromise(selectors.activeImageIndex);
 
     let newIndex = activeImageIndex + (direction === 'left' ? -1 : 1);
     if (newIndex === -1) {
@@ -143,10 +163,13 @@ export const NavigationButton = ({ direction }) => {
       const newActiveImageId = imageIds[newIndex];
       set(atoms.activeImageId, newActiveImageId);
     }
+    // TODO: !!
+    // console.log('activeImageIndex, newIndex', activeImageIndex, newIndex);
   }, [imageIds])
 
   return (
     <NavigationButtonRoot
+      data-testid={`navigation-${direction}`}
       direction={direction}
       visible={imageIds.length > 1}
       onClick={onClick}>
@@ -160,7 +183,19 @@ const GallerySliderImagesRoot = styled.div`
   position: absolute;
   display: flex;
   flex-direction: row;
-  left: 0;
+  left: -${props => {
+  const centerAlignment = Math.round(props.visibleCount / 2);
+  const firstVisible = Math.min(props.totalCount - props.visibleCount, props.index - centerAlignment);
+  const left = (firstVisible * props.imageWidth) - (props.visibleCount + centerAlignment);
+  // TODO: !!
+  // console.log('---')
+  // console.log('index, visiblecount, imageWidth', props.index, props.visibleCount, props.imageWidth);
+  // console.log('centerAlignment', centerAlignment);
+  // console.log('firstVisible', firstVisible);
+  // console.log('left', left);
+
+  return left;
+}}px;
   right: auto;
   top: auto;
   transition: all 500ms ease 0s;
@@ -174,14 +209,27 @@ const GallerySliderRoot = styled.div`
 `
 export const GallerySlider = ({ visibleCount }) => {
   const imageIds = useRecoilValue(atoms.imageIds);
+  const activeImageIndex = useRecoilValue(selectors.activeImageIndex);
+  const [ref, { width }] = useDimensions();
+
+  const imageWidth = (width || 0) / visibleCount;
 
   return (
-    <GallerySliderRoot>
+    <GallerySliderRoot ref={ref}>
       <NavigationButton direction={'left'} />
 
-      <GallerySliderImagesRoot>
+      <GallerySliderImagesRoot
+        data-testid="slider"
+        index={activeImageIndex}
+        visibleCount={visibleCount}
+        totalCount={imageIds.length}
+        imageWidth={imageWidth}>
+
         {imageIds.map((id, i) =>
-          <Image key={i} id={id} />
+          <Image
+            id={id}
+            key={i}
+            width={imageWidth} />
         )}
       </GallerySliderImagesRoot>
 
@@ -197,19 +245,19 @@ const ThumbnailsRoot = styled.div`
 export const Thumbnails = () => {
   return (
     <ThumbnailsRoot>
-      <GallerySlider visibleCount={4} />
+      <GallerySlider visibleCount={6} />
     </ThumbnailsRoot>
   )
 }
 
-const EnlargedActiveImageRoot = styled.div`
+const ZoomRoot = styled.div`
   height: 400px;
 `
-export const EnlargedActiveImage = () => {
+export const Zoom = () => {
   return (
-    <EnlargedActiveImageRoot>
+    <ZoomRoot>
       <GallerySlider visibleCount={1} />
-    </EnlargedActiveImageRoot>
+    </ZoomRoot>
   )
 }
 
@@ -217,28 +265,28 @@ const GalleryRoot = styled.div`
   background-color: #666;
   width: 800px;
 `
-export const Gallery = () => {
-  const addImage = useAddImageCallback();
-  useEffect(() => {
-    addImage(emptyImage);
-  }, [addImage]);
+
+export const testData =
+  [...Array(10).keys()]
+    .map(i => ({
+      id: uuidv4(),
+      url: `https://picsum.photos/seed/${i}/200/300`
+    }))
+
+export const Gallery = ({ autoLoadTestData }) => {
+  const addImages = useAddImagesCallback();
 
   useEffect(() => {
-    for (let i = 0; i < 10; i++) {
-      setTimeout(() => {
-        addImage({
-          id: uuidv4(),
-          url: `https://picsum.photos/seed/${uuidv4()}/200/300`
-        });
-      }, 0);
+    if (autoLoadTestData) {
+      addImages(testData);
     }
-  }, [addImage]);
+  }, [autoLoadTestData, addImages]);
 
   return (
     <GalleryRoot>
       <Input />
       <Thumbnails />
-      <EnlargedActiveImage />
+      <Zoom />
     </GalleryRoot>
   )
 }

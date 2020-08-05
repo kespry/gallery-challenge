@@ -5,7 +5,7 @@ import { Gallery } from "./components/Gallery";
 
 const App = () => (
   <RecoilRoot>
-    <Gallery />
+    <Gallery autoLoadTestData={true} />
   </RecoilRoot>
 );
 
