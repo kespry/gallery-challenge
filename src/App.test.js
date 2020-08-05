@@ -1,5 +1,5 @@
 import React from 'react';
-import { fireEvent } from '@testing-library/react';
+import { act, fireEvent } from '@testing-library/react';
 import { Gallery, emptyImage, testData } from "./components/Gallery";
 import { renderWithRecoil, flushPromisesAndTimers } from "./utils/test-utils";
 
@@ -79,6 +79,97 @@ describe('Gallery', () => {
 
     const imgs = queryAllByTestId('img');
     expect(imgs.length).toBe(testData.length * 2);
+  });
+});
+
+
+describe('Slider', () => {
+
+  it('Backwards from first to start of last page', async () => {
+    jest.useFakeTimers('modern');
+
+    const { getByTestId, getAllByTestId, queryAllByTestId } = renderWithRecoil(
+      <Gallery autoLoadTestData={true} />
+    );
+    await flushPromisesAndTimers();
+
+    const [thumbnailsSlider, zoomSlider] = getAllByTestId('slider');
+    const navigationLeft = getAllByTestId('navigation-left')[0];
+
+    expect(thumbnailsSlider).toHaveAttribute("data-first-visible", "0");
+    expect(zoomSlider).toHaveAttribute("data-first-visible", "0");
+
+    const clickLeft = async () => {
+      fireEvent.click(navigationLeft);
+      await flushPromisesAndTimers();
+      act(() => jest.runAllTimers());
+    }
+
+    await clickLeft();
+
+    expect(thumbnailsSlider).toHaveAttribute("data-first-visible", "3");
+    expect(zoomSlider).toHaveAttribute("data-first-visible", "9");
+
+    await clickLeft();
+
+    expect(thumbnailsSlider).toHaveAttribute("data-first-visible", "3");
+    expect(zoomSlider).toHaveAttribute("data-first-visible", "8");
+
+    await clickLeft();
+
+    expect(thumbnailsSlider).toHaveAttribute("data-first-visible", "3");
+    expect(zoomSlider).toHaveAttribute("data-first-visible", "7");
+
+    await clickLeft();
+
+    expect(thumbnailsSlider).toHaveAttribute("data-first-visible", "3");
+    expect(zoomSlider).toHaveAttribute("data-first-visible", "6");
+
+    await clickLeft();
+
+    expect(thumbnailsSlider).toHaveAttribute("data-first-visible", "2");
+    expect(zoomSlider).toHaveAttribute("data-first-visible", "5");
+  });
+
+  it('Forward from the start until scroll', async () => {
+    jest.useFakeTimers('modern');
+
+    const { getByTestId, getAllByTestId, queryAllByTestId } = renderWithRecoil(
+      <Gallery autoLoadTestData={true} />
+    );
+    await flushPromisesAndTimers();
+
+    const [thumbnailsSlider, zoomSlider] = getAllByTestId('slider');
+    const navigationRight = getAllByTestId('navigation-right')[0];
+
+    expect(thumbnailsSlider).toHaveAttribute("data-first-visible", "0");
+    expect(zoomSlider).toHaveAttribute("data-first-visible", "0");
+
+    const clickRight = async () => {
+      fireEvent.click(navigationRight);
+      await flushPromisesAndTimers();
+      act(() => jest.runAllTimers());
+    }
+
+    await clickRight();
+
+    expect(thumbnailsSlider).toHaveAttribute("data-first-visible", "0");
+    expect(zoomSlider).toHaveAttribute("data-first-visible", "1");
+
+    await clickRight();
+
+    expect(thumbnailsSlider).toHaveAttribute("data-first-visible", "0");
+    expect(zoomSlider).toHaveAttribute("data-first-visible", "2");
+
+    await clickRight();
+
+    expect(thumbnailsSlider).toHaveAttribute("data-first-visible", "0");
+    expect(zoomSlider).toHaveAttribute("data-first-visible", "3");
+
+    await clickRight();
+
+    expect(thumbnailsSlider).toHaveAttribute("data-first-visible", "1");
+    expect(zoomSlider).toHaveAttribute("data-first-visible", "4");
   });
 });
 

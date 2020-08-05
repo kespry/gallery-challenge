@@ -94,12 +94,13 @@ export const Input = () => {
 
 const ImageRoot = styled.img`
   width: ${props => props.width}px;
+  transition: all 500ms ease 0s;
 
     ${props => props.active
   ? css`
-      border: 1px solid #0f0;
     `
   : css`
+      opacity: 0.3;
       cursor: pointer;
     `}
 `
@@ -178,24 +179,11 @@ export const NavigationButton = ({ direction }) => {
   )
 }
 
-// TODO: refactor
 const GallerySliderImagesRoot = styled.div`
   position: absolute;
   display: flex;
   flex-direction: row;
-  left: -${props => {
-  const centerAlignment = Math.round(props.visibleCount / 2);
-  const firstVisible = Math.min(props.totalCount - props.visibleCount, props.index - centerAlignment);
-  const left = (firstVisible * props.imageWidth) - (props.visibleCount + centerAlignment);
-  // TODO: !!
-  // console.log('---')
-  // console.log('index, visiblecount, imageWidth', props.index, props.visibleCount, props.imageWidth);
-  // console.log('centerAlignment', centerAlignment);
-  // console.log('firstVisible', firstVisible);
-  // console.log('left', left);
-
-  return left;
-}}px;
+  left: ${props => -(props['data-first-visible'] * props.imageWidth)}px;
   right: auto;
   top: auto;
   transition: all 500ms ease 0s;
@@ -212,6 +200,13 @@ export const GallerySlider = ({ visibleCount }) => {
   const activeImageIndex = useRecoilValue(selectors.activeImageIndex);
   const [ref, { width }] = useDimensions();
 
+
+  const centerAlignment = Math.round(visibleCount / 2);
+  const maxFirstVisible = imageIds.length - visibleCount;
+  const firstVisibleStart = Math.max(0, activeImageIndex - centerAlignment + 1);
+  const firstVisibleEnd = Math.min(activeImageIndex, maxFirstVisible);
+  const firstVisible = Math.min(firstVisibleStart, firstVisibleEnd);
+
   const imageWidth = (width || 0) / visibleCount;
 
   return (
@@ -220,10 +215,8 @@ export const GallerySlider = ({ visibleCount }) => {
 
       <GallerySliderImagesRoot
         data-testid="slider"
-        index={activeImageIndex}
-        visibleCount={visibleCount}
-        totalCount={imageIds.length}
-        imageWidth={imageWidth}>
+        data-first-visible={firstVisible}
+        imageWidth={imageWidth} >
 
         {imageIds.map((id, i) =>
           <Image
@@ -245,7 +238,7 @@ const ThumbnailsRoot = styled.div`
 export const Thumbnails = () => {
   return (
     <ThumbnailsRoot>
-      <GallerySlider visibleCount={6} />
+      <GallerySlider visibleCount={7} />
     </ThumbnailsRoot>
   )
 }
