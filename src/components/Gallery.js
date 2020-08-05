@@ -1,13 +1,13 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { v4 as uuidv4 } from 'uuid';
 import styled, { css } from 'styled-components'
 import urlRegex from 'url-regex'
-import { atom, atomFamily, selector, useRecoilCallback, useRecoilValue } from "recoil";
+import { atom, atomFamily, useRecoilCallback, useRecoilValue } from "recoil";
 import { useRecoilState } from "recoil/dist";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 
-// styled.div = {};
+styled.div = styled.div || {};
 
 const emptyImage = {
   id: uuidv4(),
@@ -20,26 +20,25 @@ const atoms = {
   }),
   activeImageId: atom({
     key: 'atom/activeImageId',
-    default: emptyImage.id
+    default: null
   }),
   imageFamily: atomFamily({
     key: 'atomFamily/image',
-    default: _id => emptyImage
+    default: _id => null
   })
 }
-const selectors = {
-  imageIds: selector({
-    key: 'selector/imageIds',
-    get: ({ get }) => {
-      const imageIds = get(atoms.imageIds);
-      if (imageIds.length > 0) {
-        return imageIds;
-      } else {
-        return [emptyImage.id];
-      }
-    }
-  })
-}
+
+const useAddImageCallback = () => useRecoilCallback(({ snapshot, set }) => async image => {
+  set(atoms.imageFamily(image.id), image);
+
+  const imageIds = await snapshot.getPromise(atoms.imageIds);
+  if (imageIds.length === 0 || imageIds.find(id => id === emptyImage.id)) {
+    set(atoms.imageIds, [image.id]);
+    set(atoms.activeImageId, image.id);
+  } else {
+    set(atoms.imageIds, [...imageIds, image.id]);
+  }
+});
 
 const InputRoot = styled.input`
   display: inherit;
@@ -47,21 +46,7 @@ const InputRoot = styled.input`
 export const Input = () => {
   const [url, setUrl] = useState('')
 
-  const addUrl = useRecoilCallback(({ snapshot, set }) => async url => {
-    const image = {
-      id: uuidv4(),
-      url
-    }
-
-    set(atoms.imageFamily(image.id), image);
-
-    const imageIds = await snapshot.getPromise(atoms.imageIds);
-    set(atoms.imageIds, [...imageIds, image.id]);
-
-    if (imageIds.length === 0) {
-      set(atoms.activeImageId, image.id);
-    }
-  });
+  const addImage = useAddImageCallback();
 
   return (
     <InputRoot
@@ -75,7 +60,10 @@ export const Input = () => {
       onKeyUp={({ key }) => {
         if (key === 'Enter') {
           if (urlRegex().test(url)) {
-            addUrl(url);
+            addImage({
+              id: uuidv4(),
+              url
+            });
             setUrl('');
           }
         }
@@ -85,7 +73,7 @@ export const Input = () => {
 }
 
 const ImageRoot = styled.img`
-    width: 100px;
+  width: 100px;
 
     ${props => props.active
   ? css`
@@ -106,26 +94,28 @@ export const Image = ({ id }) => {
   }
 
   return (
-      <ImageRoot
-        src={image.url}
-        active={image.id === activeImageId}
-        alt=''
-        onClick={onImageClick} />
+    <ImageRoot
+      src={image.url}
+      active={image.id === activeImageId}
+      alt={JSON.stringify(image)}
+      onClick={onImageClick} />
   )
 }
 
 const NavigationButtonRoot = styled.div`
   cursor: pointer;
   position: absolute;
+  text-align: center;
   ${props => props.direction}: 0;
   display: ${props => props.visible ? 'block' : 'none'};
   top: 0;
   height: 100%;
-  width: 50px;
+  writing-mode: vertical-lr;
   background-color: #ff0000aa;
+  z-index: 1;
 `
 export const NavigationButton = ({ direction }) => {
-  const imageIds = useRecoilValue(selectors.imageIds);
+  const imageIds = useRecoilValue(atoms.imageIds);
 
   const onClick = useRecoilCallback(({ snapshot, set }) => async () => {
     const activeImageId = await snapshot.getPromise(atoms.activeImageId);
@@ -157,14 +147,23 @@ export const NavigationButton = ({ direction }) => {
 
 // TODO: refactor
 const GallerySliderImagesRoot = styled.div`
+  position: absolute;
   display: flex;
+  flex-direction: row;
+  left: 0;
+  right: auto;
+  top: auto;
+  transition: all 500ms ease 0s;
 `
 const GallerySliderRoot = styled.div`
-  position: relative;
   background-color: #333;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
 `
 export const GallerySlider = ({ visibleCount }) => {
-  const imageIds = useRecoilValue(selectors.imageIds);
+  const imageIds = useRecoilValue(atoms.imageIds);
 
   return (
     <GallerySliderRoot>
@@ -181,15 +180,26 @@ export const GallerySlider = ({ visibleCount }) => {
   )
 }
 
+const ThumbnailsRoot = styled.div`
+  height: 70px;
+  margin: 10px 0;
+`
 export const Thumbnails = () => {
   return (
-    <GallerySlider visibleCount={4} />
+    <ThumbnailsRoot>
+      <GallerySlider visibleCount={4} />
+    </ThumbnailsRoot>
   )
 }
 
+const EnlargedActiveImageRoot = styled.div`
+  height: 400px;
+`
 export const EnlargedActiveImage = () => {
   return (
-    <GallerySlider visibleCount={1} />
+    <EnlargedActiveImageRoot>
+      <GallerySlider visibleCount={1} />
+    </EnlargedActiveImageRoot>
   )
 }
 
@@ -198,6 +208,11 @@ const GalleryRoot = styled.div`
   width: 800px;
 `
 export const Gallery = () => {
+  const addImage = useAddImageCallback();
+  useEffect(() => {
+    addImage(emptyImage);
+  }, [addImage]);
+
   return (
     <GalleryRoot>
       <Input />
