@@ -20,7 +20,7 @@ const atoms = {
   }),
   activeImageId: atom({
     key: 'atom/activeImageId',
-    default: null
+    default: emptyImage.id
   }),
   imageFamily: atomFamily({
     key: 'atomFamily/image',
@@ -38,20 +38,11 @@ const selectors = {
         return [emptyImage.id];
       }
     }
-  }),
-  activeImage: selector({
-    key: 'selector/activeImage',
-    get: ({ get }) => {
-      const activeImageId = get(atoms.activeImageId);
-      return get(atoms.imageFamily(activeImageId));
-    },
-    set: ({ set }, newValue) => {
-      set(atoms.activeImageId, newValue);
-    }
   })
 }
 
 const InsertInput = styled.input`
+  display: inherit;
 `
 export const Input = () => {
   const [url, setUrl] = useState('')
@@ -67,7 +58,9 @@ export const Input = () => {
     const imageIds = await snapshot.getPromise(atoms.imageIds);
     set(atoms.imageIds, [...imageIds, image.id]);
 
-    set(atoms.activeImageId, image.id);
+    if (imageIds.length === 0) {
+      set(atoms.activeImageId, image.id);
+    }
   });
 
   return (
@@ -97,16 +90,22 @@ const ImageContainer = styled.div`
 const ImageEl = styled.img`
     width: 100px;
 
-    ${props => props.active && css`
+    ${props => props.active
+  ? css`
       border: 1px solid #0f0;
+    `
+  : css`
+      cursor: pointer;
     `}
 `
 export const Image = ({ id }) => {
   const image = useRecoilValue(atoms.imageFamily(id));
-  const [activeImage, setActiveImage] = useRecoilState(selectors.activeImage);
+  const [activeImageId, setActiveImageId] = useRecoilState(atoms.activeImageId);
 
   const onImageClick = () => {
-    setActiveImage(image.id);
+    if (activeImageId !== id) {
+      setActiveImageId(image.id);
+    }
   }
 
   return (
@@ -114,7 +113,7 @@ export const Image = ({ id }) => {
       <span>{JSON.stringify(image)}</span>
       <ImageEl
         src={image.url}
-        active={image.id === activeImage.id}
+        active={image.id === activeImageId}
         alt=''
         onClick={onImageClick} />
     </ImageContainer>
@@ -125,17 +124,39 @@ const NavigationButtonContainer = styled.div`
   cursor: pointer;
   position: absolute;
   ${props => props.direction}: 0;
+  display: ${props => props.visible ? 'block' : 'none'};
   top: 0;
   height: 100%;
   width: 50px;
   background-color: #ff0000aa;
 `
 export const NavigationButton = ({ direction }) => {
-  const icon = direction === 'left' ? faArrowLeft : faArrowRight;
+  const imageIds = useRecoilValue(selectors.imageIds);
+
+  const onClick = useRecoilCallback(({ snapshot, set }) => async () => {
+    const activeImageId = await snapshot.getPromise(atoms.activeImageId);
+
+    const activeImageIndex = imageIds.indexOf(activeImageId);
+
+    let newIndex = activeImageIndex + (direction === 'left' ? -1 : 1);
+    if (newIndex === -1) {
+      newIndex = imageIds.length - 1;
+    } else if (newIndex === imageIds.length) {
+      newIndex = 0;
+    }
+
+    if (newIndex !== activeImageIndex) {
+      const newActiveImageId = imageIds[newIndex];
+      set(atoms.activeImageId, newActiveImageId);
+    }
+  }, [imageIds])
 
   return (
-    <NavigationButtonContainer direction={direction}>
-      <FontAwesomeIcon icon={icon} />
+    <NavigationButtonContainer
+      direction={direction}
+      visible={imageIds.length > 1}
+      onClick={onClick}>
+      <FontAwesomeIcon icon={direction === 'left' ? faArrowLeft : faArrowRight} />
     </NavigationButtonContainer>
   )
 }
