@@ -41,7 +41,7 @@ const selectors = {
   })
 }
 
-const InsertInput = styled.input`
+const InputRoot = styled.input`
   display: inherit;
 `
 export const Input = () => {
@@ -64,7 +64,7 @@ export const Input = () => {
   });
 
   return (
-    <InsertInput
+    <InputRoot
       placeholder="Insert a new image entering the URL..."
       type="search"
       autoComplete="off"
@@ -84,10 +84,7 @@ export const Input = () => {
   )
 }
 
-const ImageContainer = styled.div`
-  background-color: #333;
-`
-const ImageEl = styled.img`
+const ImageRoot = styled.img`
     width: 100px;
 
     ${props => props.active
@@ -109,18 +106,15 @@ export const Image = ({ id }) => {
   }
 
   return (
-    <ImageContainer>
-      <span>{JSON.stringify(image)}</span>
-      <ImageEl
+      <ImageRoot
         src={image.url}
         active={image.id === activeImageId}
         alt=''
         onClick={onImageClick} />
-    </ImageContainer>
   )
 }
 
-const NavigationButtonContainer = styled.div`
+const NavigationButtonRoot = styled.div`
   cursor: pointer;
   position: absolute;
   ${props => props.direction}: 0;
@@ -152,19 +146,20 @@ export const NavigationButton = ({ direction }) => {
   }, [imageIds])
 
   return (
-    <NavigationButtonContainer
+    <NavigationButtonRoot
       direction={direction}
       visible={imageIds.length > 1}
       onClick={onClick}>
       <FontAwesomeIcon icon={direction === 'left' ? faArrowLeft : faArrowRight} />
-    </NavigationButtonContainer>
+    </NavigationButtonRoot>
   )
 }
 
-const GallerySliderImagesContainer = styled.div`
+// TODO: refactor
+const GallerySliderImagesRoot = styled.div`
   display: flex;
 `
-const GallerySliderContainer = styled.div`
+const GallerySliderRoot = styled.div`
   position: relative;
   background-color: #333;
 `
@@ -172,16 +167,17 @@ export const GallerySlider = ({ visibleCount }) => {
   const imageIds = useRecoilValue(selectors.imageIds);
 
   return (
-    <GallerySliderContainer>
+    <GallerySliderRoot>
       <NavigationButton direction={'left'} />
 
-      <GallerySliderImagesContainer>
-        <span>Visible count: {visibleCount}</span>
-        {imageIds.map((id, i) => <Image key={i} id={id} />)}
-      </GallerySliderImagesContainer>
+      <GallerySliderImagesRoot>
+        {imageIds.map((id, i) =>
+          <Image key={i} id={id} />
+        )}
+      </GallerySliderImagesRoot>
 
       <NavigationButton direction={'right'} />
-    </GallerySliderContainer>
+    </GallerySliderRoot>
   )
 }
 
@@ -191,22 +187,22 @@ export const Thumbnails = () => {
   )
 }
 
-export const CurrentImage = () => {
+export const EnlargedActiveImage = () => {
   return (
     <GallerySlider visibleCount={1} />
   )
 }
 
-const GalleryContainer = styled.div`
+const GalleryRoot = styled.div`
   background-color: #666;
   width: 800px;
 `
 export const Gallery = () => {
   return (
-    <GalleryContainer>
+    <GalleryRoot>
       <Input />
       <Thumbnails />
-      <CurrentImage />
-    </GalleryContainer>
+      <EnlargedActiveImage />
+    </GalleryRoot>
   )
 }
