@@ -1,41 +1,45 @@
-import styled from "styled-components";
-import { atoms, selectors } from "../state";
-import { useRecoilValue } from "recoil";
-import React from "react";
-import { Image } from "./Image";
-
+import styled from 'styled-components';
+import { useRecoilValue } from 'recoil';
+import React from 'react';
+import { atoms, selectors } from '../state';
+import Image from './Image';
 
 const GallerySliderRoot = styled.div`
+  height: 100%;
   position: absolute;
   display: flex;
   flex-direction: row;
   left: ${props => -(props['data-first-visible'] * props.imageWidth)}px;
+  
   right: auto;
   top: auto;
   transition: all 500ms ease 0s;
-`
-export const GallerySlider = ({ visibleCount, imageWidth }) => {
+`;
+const GallerySlider = ({ visibleCount, imageWidth }) => {
   const imageIds = useRecoilValue(atoms.imageIds);
   const activeImageIndex = useRecoilValue(selectors.activeImageIndex);
 
   const centerAlignment = Math.round(visibleCount / 2);
+  const firstVisibleStart = activeImageIndex - centerAlignment + 1;
   const maxFirstVisible = imageIds.length - visibleCount;
-  const firstVisibleStart = Math.max(0, activeImageIndex - centerAlignment + 1);
   const firstVisibleEnd = Math.min(activeImageIndex, maxFirstVisible);
-  const firstVisible = Math.min(firstVisibleStart, firstVisibleEnd);
+  const firstVisible = Math.max(0, Math.min(firstVisibleStart, firstVisibleEnd));
 
   return (
     <GallerySliderRoot
       data-testid="slider"
       data-first-visible={firstVisible}
-      imageWidth={imageWidth}>
-
-      {imageIds.map(id =>
+      imageWidth={imageWidth}
+    >
+      {imageIds.map(id => (
         <Image
+          showBorders={visibleCount > 1}
           id={id}
           key={id}
-          width={imageWidth} />
-      )}
+          imageWidth={imageWidth}
+        />
+      ))}
     </GallerySliderRoot>
-  )
-}
+  );
+};
+export default GallerySlider;

@@ -1,15 +1,14 @@
 import React from 'react';
 import { act } from '@testing-library/react';
-import { Gallery } from "./Gallery";
-import { flushPromisesAndTimers, renderWithRecoil } from "../utils/test-utils";
-import { emptyImage, testData } from "../state";
-import { fireEvent } from "@testing-library/dom";
-
+import { fireEvent } from '@testing-library/dom';
+import Gallery from './Gallery';
+import { flushPromisesAndTimers, renderWithRecoil } from '../utils/test-utils';
+import { emptyImage, testData } from '../state';
 
 describe('Data Loading', () => {
   it('Gallery with an empty image by default', async () => {
-    const { queryAllByTestId } = renderWithRecoil(
-      <Gallery autoLoadTestData={false} />
+    const { getAllByTestId, queryAllByTestId } = renderWithRecoil(
+      <Gallery autoLoadTestData={false} />,
     );
 
     const imgs = queryAllByTestId('img');
@@ -18,13 +17,18 @@ describe('Data Loading', () => {
     const [thumbnailImg, zoomImg] = imgs;
     expect(thumbnailImg.src).toBe(emptyImage.url);
     expect(zoomImg.src).toBe(emptyImage.url);
+
+    const [thumbnailsSlider, zoomSlider] = getAllByTestId('slider');
+
+    expect(thumbnailsSlider).toHaveAttribute('data-first-visible', '0');
+    expect(zoomSlider).toHaveAttribute('data-first-visible', '0');
   });
 
   it('Adding one image to the gallery replaces the empty image', async () => {
     jest.useFakeTimers('modern');
 
     const { queryByTestId, queryAllByTestId } = renderWithRecoil(
-      <Gallery autoLoadTestData={false} />
+      <Gallery autoLoadTestData={false} />,
     );
 
     const input = queryByTestId('input');
@@ -46,10 +50,10 @@ describe('Data Loading', () => {
     jest.useFakeTimers('modern');
 
     const { queryByTestId, queryAllByTestId } = renderWithRecoil(
-      <Gallery autoLoadTestData={false} />
+      <Gallery autoLoadTestData={false} />,
     );
 
-    let input = queryByTestId('input');
+    const input = queryByTestId('input');
 
     fireEvent.change(input, { target: { value: testData[0].url } });
     fireEvent.keyUp(input, { key: 'Enter', code: 'Enter' });
@@ -73,7 +77,7 @@ describe('Data Loading', () => {
     jest.useFakeTimers('modern');
 
     const { queryAllByTestId } = renderWithRecoil(
-      <Gallery autoLoadTestData={true} />
+      <Gallery autoLoadTestData />,
     );
 
     await flushPromisesAndTimers();
@@ -88,94 +92,94 @@ describe('Navigation', () => {
     jest.useFakeTimers('modern');
 
     const { getAllByTestId } = renderWithRecoil(
-      <Gallery autoLoadTestData={true} />
+      <Gallery autoLoadTestData />,
     );
     await flushPromisesAndTimers();
 
     const [thumbnailsSlider, zoomSlider] = getAllByTestId('slider');
     const navigationLeft = getAllByTestId('navigation-left')[0];
 
-    expect(thumbnailsSlider).toHaveAttribute("data-first-visible", "0");
-    expect(zoomSlider).toHaveAttribute("data-first-visible", "0");
+    expect(thumbnailsSlider).toHaveAttribute('data-first-visible', '0');
+    expect(zoomSlider).toHaveAttribute('data-first-visible', '0');
 
     const clickLeft = async () => {
       fireEvent.click(navigationLeft);
       await flushPromisesAndTimers();
       act(() => jest.runAllTimers());
-    }
+    };
 
     await clickLeft();
 
-    expect(thumbnailsSlider).toHaveAttribute("data-first-visible", "3");
-    expect(zoomSlider).toHaveAttribute("data-first-visible", "9");
+    expect(thumbnailsSlider).toHaveAttribute('data-first-visible', '3');
+    expect(zoomSlider).toHaveAttribute('data-first-visible', '9');
 
     await clickLeft();
 
-    expect(thumbnailsSlider).toHaveAttribute("data-first-visible", "3");
-    expect(zoomSlider).toHaveAttribute("data-first-visible", "8");
+    expect(thumbnailsSlider).toHaveAttribute('data-first-visible', '3');
+    expect(zoomSlider).toHaveAttribute('data-first-visible', '8');
 
     await clickLeft();
 
-    expect(thumbnailsSlider).toHaveAttribute("data-first-visible", "3");
-    expect(zoomSlider).toHaveAttribute("data-first-visible", "7");
+    expect(thumbnailsSlider).toHaveAttribute('data-first-visible', '3');
+    expect(zoomSlider).toHaveAttribute('data-first-visible', '7');
 
     await clickLeft();
 
-    expect(thumbnailsSlider).toHaveAttribute("data-first-visible", "3");
-    expect(zoomSlider).toHaveAttribute("data-first-visible", "6");
+    expect(thumbnailsSlider).toHaveAttribute('data-first-visible', '3');
+    expect(zoomSlider).toHaveAttribute('data-first-visible', '6');
 
     await clickLeft();
 
-    expect(thumbnailsSlider).toHaveAttribute("data-first-visible", "2");
-    expect(zoomSlider).toHaveAttribute("data-first-visible", "5");
+    expect(thumbnailsSlider).toHaveAttribute('data-first-visible', '2');
+    expect(zoomSlider).toHaveAttribute('data-first-visible', '5');
   });
 
   it('Forward from the start until first scroll', async () => {
     jest.useFakeTimers('modern');
 
     const { getAllByTestId } = renderWithRecoil(
-      <Gallery autoLoadTestData={true} />
+      <Gallery autoLoadTestData />,
     );
     await flushPromisesAndTimers();
 
     const [thumbnailsSlider, zoomSlider] = getAllByTestId('slider');
     const navigationRight = getAllByTestId('navigation-right')[0];
 
-    expect(thumbnailsSlider).toHaveAttribute("data-first-visible", "0");
-    expect(zoomSlider).toHaveAttribute("data-first-visible", "0");
+    expect(thumbnailsSlider).toHaveAttribute('data-first-visible', '0');
+    expect(zoomSlider).toHaveAttribute('data-first-visible', '0');
 
     const clickRight = async () => {
       fireEvent.click(navigationRight);
       await flushPromisesAndTimers();
       act(() => jest.runAllTimers());
-    }
+    };
 
     await clickRight();
 
-    expect(thumbnailsSlider).toHaveAttribute("data-first-visible", "0");
-    expect(zoomSlider).toHaveAttribute("data-first-visible", "1");
+    expect(thumbnailsSlider).toHaveAttribute('data-first-visible', '0');
+    expect(zoomSlider).toHaveAttribute('data-first-visible', '1');
 
     await clickRight();
 
-    expect(thumbnailsSlider).toHaveAttribute("data-first-visible", "0");
-    expect(zoomSlider).toHaveAttribute("data-first-visible", "2");
+    expect(thumbnailsSlider).toHaveAttribute('data-first-visible', '0');
+    expect(zoomSlider).toHaveAttribute('data-first-visible', '2');
 
     await clickRight();
 
-    expect(thumbnailsSlider).toHaveAttribute("data-first-visible", "0");
-    expect(zoomSlider).toHaveAttribute("data-first-visible", "3");
+    expect(thumbnailsSlider).toHaveAttribute('data-first-visible', '0');
+    expect(zoomSlider).toHaveAttribute('data-first-visible', '3');
 
     await clickRight();
 
-    expect(thumbnailsSlider).toHaveAttribute("data-first-visible", "1");
-    expect(zoomSlider).toHaveAttribute("data-first-visible", "4");
+    expect(thumbnailsSlider).toHaveAttribute('data-first-visible', '1');
+    expect(zoomSlider).toHaveAttribute('data-first-visible', '4');
   });
 
   it('Manual image click', async () => {
     jest.useFakeTimers('modern');
 
     const { getAllByTestId } = renderWithRecoil(
-      <Gallery autoLoadTestData={true} />
+      <Gallery autoLoadTestData />,
     );
     await flushPromisesAndTimers();
 
@@ -187,7 +191,7 @@ describe('Navigation', () => {
 
     const [thumbnailsSlider, zoomSlider] = getAllByTestId('slider');
 
-    expect(thumbnailsSlider).toHaveAttribute("data-first-visible", "3");
-    expect(zoomSlider).toHaveAttribute("data-first-visible", "6");
+    expect(thumbnailsSlider).toHaveAttribute('data-first-visible', '3');
+    expect(zoomSlider).toHaveAttribute('data-first-visible', '6');
   });
 });

@@ -1,7 +1,6 @@
-import { act, render } from "@testing-library/react";
-import { RecoilRoot } from "recoil";
-import React from "react";
-
+import { act, render } from '@testing-library/react';
+import { RecoilRoot } from 'recoil';
+import React from 'react';
 
 export function renderWithRecoil(elements) {
   return render(<RecoilRoot>{elements}</RecoilRoot>);

@@ -1,11 +1,10 @@
 import React from 'react';
-import App from "./App";
-import { renderWithRecoil } from "./utils/test-utils";
-
+import { render } from '@testing-library/react';
+import App from './App';
 
 test('App rendered with image', async () => {
-  const { queryAllByTestId } = renderWithRecoil(
-    <App />
+  const { queryAllByTestId } = render(
+    <App />,
   );
 
   const imgs = queryAllByTestId('img');

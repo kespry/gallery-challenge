@@ -1,13 +1,19 @@
-import React, { useState } from "react";
-import styled from "styled-components";
-import { useAddImagesCallback } from "../state";
-import urlRegex from "url-regex";
-import { v4 as uuidv4 } from "uuid";
-
+import React, { useState } from 'react';
+import styled from 'styled-components';
+import urlRegex from 'url-regex';
+import { v4 as uuidv4 } from 'uuid';
+import { useAddImagesCallback } from '../state';
 
 const InputRoot = styled.input`
-`
-export const Input = () => {
+  width: 100%;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #444;
+  color: #ddd;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+`;
+const Input = () => {
   const [url, setUrl] = useState('');
 
   const addImages = useAddImagesCallback();
@@ -25,12 +31,13 @@ export const Input = () => {
           if (urlRegex().test(url)) {
             addImages([{
               id: uuidv4(),
-              url
+              url,
             }]);
             setUrl('');
           }
         }
       }}
     />
-  )
-}
+  );
+};
+export default Input;
