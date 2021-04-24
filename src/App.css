@@ -1,3 +1,6 @@
-.app {
-  text-align: center;
+@import './reset.css';
+
+.container {
+  max-width: 90rem;
+  margin: 3rem auto;
 }
